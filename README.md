@@ -111,30 +111,3 @@ cd SpaceDiver/src
 javac SpaceDiver.java
 java SpaceDiver
 ```
-
-## 📖 Design Patterns Used
-
-- 🎯 **Strategy Pattern** - Different rendering strategies for background objects
-- 👁️ **Observer Pattern** - Swing event model (listeners)
-- 🔗 **Composition Pattern** - Game entities contained within SpaceDiver
-- 🔒 **Singleton-like Behavior** - Single SpaceDiver instance manages state
-
-## ✅ Why This is Good OOP Design
-
-- ✔️ **Single Responsibility Principle (SRP)** - Each class has one clear purpose
-- 🔐 **Encapsulation of state and behavior** - Controlled access to internals
-- 🎭 **Abstraction of complex systems** - Hide implementation details
-- ♻️ **Reusability and extensibility** - Easy to build upon or modify
-- 🧹 **Maintainable and organized structure** - Clean, readable code
-
-## 🎤 Presentation Tips
-
-1. Start with OOP pillars and show examples from code
-2. Demonstrate polymorphism with background objects
-3. Explain event handling via listeners
-4. Highlight design patterns (Strategy, Observer, Composition)
-5. Run a live demo and narrate the underlying mechanics
-
-## 📌 Summary
-
-Space Diver is a comprehensive showcase of OOP principles applied to a real game engine. It demonstrates **encapsulation**, **abstraction**, **inheritance**, **polymorphism**, and **composition** in a practical, engaging project.
