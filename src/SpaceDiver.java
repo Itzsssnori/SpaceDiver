@@ -5,26 +5,6 @@ import java.util.*;
 import javax.sound.sampled.*;
 import javax.swing.*;
 
-/**
- * SPACE DIVER — A Flappy-Bird-inspired game with a neon space aesthetic.
- *
- * HOW TO RUN:
- *   javac SpaceDiver.java
- *   java SpaceDiver
- *
- * CONTROLS:
- *   SPACE / CLICK — Thrust upward
- *   R            — Restart after game over
- *
- * DIFFERENCES FROM FLAPPY BIRD:
- *   - Neon space theme with animated starfield background
- *   - Ship thrusts with particle exhaust trail
- *   - Obstacles are spinning asteroid rings (not pipes)
- *   - Gravity is weaker; ship has momentum/inertia
- *   - Speed increases every 5 points
- *   - Screen flash + shockwave on death
- *   - Parallax star layers (near/far)
- */
 public class SpaceDiver extends JPanel implements ActionListener, KeyListener, MouseListener {
 
     // ── Window / game constants ──────────────────────────────────────────────
@@ -189,9 +169,10 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
         addKeyListener(this);
         addMouseListener(this);
 
-        fontHUD   = new Font("Monospaced", Font.BOLD, 28);
-        fontBig   = new Font("Monospaced", Font.BOLD, 48);
-        fontSmall = new Font("Monospaced", Font.PLAIN, 18);
+        // Sci-fi fonts (using fallbacks to system fonts that are widely available)
+        fontHUD   = new Font("Courier New", Font.BOLD, 32);   // Monospace for scores
+        fontBig   = new Font("Courier New", Font.BOLD, 56);   // Large title font
+        fontSmall = new Font("Courier New", Font.PLAIN, 16);  // Small text
 
         loadSounds();  // Load audio at startup
         initStars();
@@ -288,12 +269,26 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
         if (!started) started = true;
         playSound("wing");
         velY = THRUST;
-        // exhaust burst
-        for (int i = 0; i < 8; i++) {
-            double vx = 1.5 + rng.nextDouble() * 2;
-            double vy = (rng.nextDouble() - 0.5) * 2;
-            Color c = rng.nextBoolean() ? new Color(0, 200, 255) : new Color(120, 80, 255);
-            particles.add(new Particle(shipX - 12, shipY + 2, vx, vy, 18 + rng.nextInt(10), c, 3 + rng.nextDouble() * 3));
+        
+        // Thruster burst - bright orange/yellow particles
+        for (int i = 0; i < 10; i++) {
+            double vx = 2.0 + rng.nextDouble() * 2.5;
+            double vy = (rng.nextDouble() - 0.5) * 2.5;
+            
+            // Mix of orange and golden colors for thruster flame
+            Color flameColor = rng.nextBoolean() 
+                ? new Color(255, 140, 40, 200)   // Warm orange
+                : new Color(255, 200, 80, 180);  // Golden
+            
+            particles.add(new Particle(
+                shipX - 32, 
+                shipY + (rng.nextDouble() - 0.5) * 4, 
+                vx, 
+                vy, 
+                22 + rng.nextInt(14), 
+                flameColor, 
+                4 + rng.nextDouble() * 4
+            ));
         }
     }
 
@@ -303,12 +298,27 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
         bestScore = Math.max(bestScore, score);
         flashFrames = 12;
         shockX = shipX; shockY = shipY; shockR = 5; shockActive = true;
-        // debris burst
-        for (int i = 0; i < 40; i++) {
+        
+        // Debris burst - orange and white hot particles
+        for (int i = 0; i < 50; i++) {
             double angle = rng.nextDouble() * Math.PI * 2;
-            double spd = 1 + rng.nextDouble() * 5;
-            Color c = rng.nextBoolean() ? new Color(255, 80, 40) : new Color(255, 220, 60);
-            particles.add(new Particle(shipX, shipY, Math.cos(angle) * spd, Math.sin(angle) * spd, 35 + rng.nextInt(20), c, 2 + rng.nextDouble() * 4));
+            double spd = 2 + rng.nextDouble() * 6;
+            
+            Color debrisColor = rng.nextInt(3) == 0
+                ? new Color(255, 255, 200, 220)  // Hot white
+                : (rng.nextBoolean() 
+                    ? new Color(255, 120, 40, 210)    // Orange
+                    : new Color(255, 200, 80, 200));  // Golden
+            
+            particles.add(new Particle(
+                shipX, 
+                shipY, 
+                Math.cos(angle) * spd, 
+                Math.sin(angle) * spd, 
+                40 + rng.nextInt(25), 
+                debrisColor, 
+                2.5 + rng.nextDouble() * 5
+            ));
         }
     }
 
@@ -368,10 +378,20 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
             // Remove off-screen rings
             rings.removeIf(r -> r.x < -60);
 
-            // Exhaust trail (passive, small)
+            // Exhaust trail (passive, continuous subtle glow)
             if (rng.nextInt(3) == 0) {
-                Color c = new Color(0, 150 + rng.nextInt(105), 200 + rng.nextInt(55), 180);
-                particles.add(new Particle(shipX - 10, shipY + (rng.nextDouble() - 0.5) * 6, 1.5 + rng.nextDouble(), (rng.nextDouble() - 0.5) * 1.2, 12, c, 2 + rng.nextDouble() * 2));
+                Color c = rng.nextBoolean() 
+                    ? new Color(255, 140, 60, 160)   // Warm orange
+                    : new Color(255, 100, 40, 140);  // Deep orange
+                particles.add(new Particle(
+                    shipX - 32, 
+                    shipY + (rng.nextDouble() - 0.5) * 5, 
+                    1.2 + rng.nextDouble() * 0.8, 
+                    (rng.nextDouble() - 0.5) * 0.8, 
+                    15, 
+                    c, 
+                    2 + rng.nextDouble() * 2.5
+                ));
             }
         }
 
@@ -454,15 +474,18 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
         Graphics2D g = (Graphics2D) g0;
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Background gradient
-        GradientPaint bg = new GradientPaint(0, 0, new Color(3, 5, 18), 0, H, new Color(8, 2, 28));
+        // Background gradient - deep navy to dark purple space
+        GradientPaint bg = new GradientPaint(0, 0, new Color(2, 5, 25), 0, H, new Color(15, 5, 35));
         g.setPaint(bg);
         g.fillRect(0, 0, W, H);
 
-        // Stars
+        // Nebula clouds in background for atmosphere
+        drawNebula(g);
+
+        // Stars (parallax layers)
         for (Star s : stars) {
             int alpha = (int)(s.brightness * 220);
-            g.setColor(new Color(180, 200, 255, alpha));
+            g.setColor(new Color(200, 210, 255, alpha));
             int sz = s.speed > 0.7 ? 2 : 1;
             g.fillOval((int)s.x, (int)s.y, sz, sz);
         }
@@ -480,7 +503,7 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
             g.drawOval((int)(shockX - shockR), (int)(shockY - shockR), (int)(shockR * 2), (int)(shockR * 2));
         }
 
-        // Asteroid rings
+        // Electric barriers (rings)
         for (Ring r : rings) {
             drawRing(g, r);
         }
@@ -494,15 +517,15 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
             g.fillOval((int)(p.x - sz / 2.0), (int)(p.y - sz / 2.0), sz, sz);
         }
 
-        // Ship (neon triangular spaceship)
+        // Ship (sleek spaceship with thruster)
         if (alive || flashFrames > 0) {
             drawShip(g, shipX, shipY, velY);
         }
 
-        // Screen flash
+        // Screen flash on impact
         if (flashFrames > 0) {
-            int alpha = (int)(flashFrames / 12.0 * 100);
-            g.setColor(new Color(255, 100, 40, alpha));
+            int alpha = (int)(flashFrames / 12.0 * 120);
+            g.setColor(new Color(255, 80, 40, alpha));
             g.fillRect(0, 0, W, H);
         }
 
@@ -510,68 +533,122 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
         drawHUD(g);
     }
 
+    void drawNebula(Graphics2D g) {
+        // Create multiple nebula clouds with purple/cyan/magenta tones
+        Random r = new Random(42); // Fixed seed for consistent nebula
+        
+        // Layer 1 - Large purple nebula clouds
+        g.setColor(new Color(100, 30, 150, 40));
+        for (int i = 0; i < 3; i++) {
+            int cx = (i * W / 2) + 150;
+            int cy = H / 3 + (int)(30 * Math.sin(i * 1.5));
+            int rad = 180 + i * 40;
+            
+            // Multiple overlapping circles for cloud effect
+            for (int j = 0; j < 4; j++) {
+                int ox = (int)(Math.cos(j * Math.PI / 2) * (rad / 2));
+                int oy = (int)(Math.sin(j * Math.PI / 2) * (rad / 2));
+                g.fillOval(cx + ox - rad/3, cy + oy - rad/3, rad*2/3, rad*2/3);
+            }
+        }
+        
+        // Layer 2 - Cyan/electric blue accents
+        g.setColor(new Color(0, 100, 200, 30));
+        for (int i = 0; i < 2; i++) {
+            int cx = (int)(W * 0.3 + i * W * 0.4 + 50 * Math.sin(i));
+            int cy = (int)(H * 0.6 + 40 * Math.cos(i * 1.3));
+            int rad = 140 + i * 30;
+            g.fillOval(cx - rad, cy - rad, rad * 2, rad * 2);
+        }
+        
+        // Layer 3 - Subtle magenta/pink accents in distance
+        g.setColor(new Color(150, 20, 100, 25));
+        int cx2 = W / 4;
+        int cy2 = H / 2;
+        g.fillOval(cx2 - 200, cy2 - 150, 400, 300);
+    }
+
     void drawRing(Graphics2D g, Ring r) {
         int x = (int)r.x;
         int gapTop = r.gapTop;
         int gapBot = gapTop + r.gapSize;
 
-        // Draw classic neon pipes
-        drawClassicPipe(g, x, 0, gapTop, r.angle, true);
-        drawClassicPipe(g, x, gapBot, H - gapBot, r.angle, false);
+        // Draw electric barriers
+        drawElectricBarrier(g, x, 0, gapTop, r.angle, true);
+        drawElectricBarrier(g, x, gapBot, H - gapBot, r.angle, false);
     }
 
-    void drawClassicPipe(Graphics2D g, int x, int y, int height, double angle, boolean isTop) {
-        int pipeW = 60;
+    void drawElectricBarrier(Graphics2D g, int x, int y, int height, double angle, boolean isTop) {
+        int barrierW = 56;
         
-        // Glow aura (outer halo)
-        for (int i = 6; i >= 1; i--) {
-            int alpha = (int)(100 * (1.0 - i / 6.0));
-            g.setColor(new Color(0, 200 + i * 8, 255, alpha));
-            g.fillRect(x - i, y, pipeW + i * 2, height);
+        // Outer violet/purple glow aura
+        for (int i = 8; i >= 1; i--) {
+            int alpha = (int)(80 * (1.0 - i / 8.0));
+            g.setColor(new Color(150 + i * 5, 50, 200 + i * 2, alpha));
+            g.fillRect(x - i, y, barrierW + i * 2, height);
         }
 
-        // Main pipe body - gradient
-        GradientPaint gradient = new GradientPaint(x, y, new Color(0, 180, 255), x + pipeW, y, new Color(100, 220, 255));
+        // Main barrier body - gradient from electric blue to cyan
+        GradientPaint gradient = new GradientPaint(x, y, new Color(0, 100, 220, 200), x + barrierW, y, new Color(0, 200, 255, 200));
         g.setPaint(gradient);
-        g.fillRect(x, y, pipeW, height);
+        g.fillRect(x, y, barrierW, height);
 
-        // Inner shadow (left edge)
-        g.setColor(new Color(0, 100, 180, 150));
-        g.fillRect(x, y, 4, height);
+        // Bright electric blue core
+        g.setColor(new Color(100, 200, 255, 150));
+        g.fillRect(x + 8, y, barrierW - 16, height);
 
-        // Bright highlight (right edge)
-        g.setColor(new Color(200, 255, 255, 200));
-        g.fillRect(x + pipeW - 3, y, 3, height);
-
-        // Neon outline
-        g.setStroke(new BasicStroke(2));
-        g.setColor(new Color(0, 255, 200, 220));
-        g.drawRect(x, y, pipeW, height);
-
-        // Electricity crackle effect
-        Random r2 = new Random((long)(x * y + angle * 1000));
-        g.setColor(new Color(150, 255, 255, 200));
-        for (int i = 0; i < height / 25; i++) {
-            int cy = y + i * 25 + r2.nextInt(15);
-            int cx = x + pipeW / 2 + r2.nextInt(10) - 5;
-            // Jagged electric bolts
-            int endX = cx + r2.nextInt(16) - 8;
-            int endY = cy + 12 + r2.nextInt(8);
-            g.drawLine(cx, cy, endX, endY);
-            if (r2.nextBoolean()) {
-                g.drawLine(endX, endY, endX + r2.nextInt(8) - 4, endY + 6);
+        // Dynamic electrical crackling - jagged bolts
+        Random r2 = new Random((long)(x * 31 + y + angle * 1000));
+        
+        // Multiple electrical strike patterns
+        for (int bolt = 0; bolt < height / 20; bolt++) {
+            int startY = y + bolt * 20 + r2.nextInt(12);
+            int boltX = x + barrierW / 2;
+            int boltY = startY;
+            
+            // Main bolt - bright white/cyan
+            g.setColor(new Color(200, 255, 255, 220));
+            int bolts = 3 + r2.nextInt(3);
+            for (int i = 0; i < bolts; i++) {
+                int nextX = boltX + r2.nextInt(20) - 10;
+                int nextY = boltY + 6 + r2.nextInt(4);
+                g.setStroke(new BasicStroke(2f));
+                g.drawLine(boltX, boltY, nextX, nextY);
+                
+                // Secondary branches (thinner, purple-ish)
+                if (r2.nextDouble() > 0.6) {
+                    g.setColor(new Color(180, 100, 255, 150));
+                    g.setStroke(new BasicStroke(1.2f));
+                    int branchX = nextX + r2.nextInt(8) - 4;
+                    int branchY = nextY + r2.nextInt(6);
+                    g.drawLine(nextX, nextY, branchX, branchY);
+                    g.setColor(new Color(200, 255, 255, 220));
+                }
+                boltX = nextX;
+                boltY = nextY;
             }
         }
 
-        // Pipe rim glow at gap edge
-        int rimAlpha = (int)(150 + 50 * Math.sin(angle * 5));
-        g.setColor(new Color(100, 255, 255, rimAlpha));
-        g.setStroke(new BasicStroke(2.5f));
-        if (isTop) {
-            g.drawLine(x - 5, y + height - 1, x + pipeW + 5, y + height - 1);
-        } else {
-            g.drawLine(x - 5, y, x + pipeW + 5, y);
+        // Electric hum pulse effect - pulsing glow rings
+        int pulseAlpha = (int)(100 + 80 * Math.sin(angle * 8));
+        g.setColor(new Color(100, 200, 255, pulseAlpha));
+        g.setStroke(new BasicStroke(1.5f));
+        for (int pulse = 0; pulse < height; pulse += 40) {
+            int py = y + pulse;
+            if (py < y + height) {
+                g.drawRect(x - 4, py, barrierW + 8, 2);
+            }
         }
+
+        // Intense bright edge highlights (dangerous look)
+        g.setColor(new Color(200, 255, 255, 200));
+        g.setStroke(new BasicStroke(2.5f));
+        g.drawRect(x, y, barrierW, height);
+        
+        // Additional cyan inner edge for that crackling look
+        g.setColor(new Color(100, 220, 255, 150));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawRect(x + 2, y + 2, barrierW - 4, height - 4);
     }
 
     void drawBackgroundObject(Graphics2D g, BackgroundObject obj) {
@@ -859,91 +936,218 @@ public class SpaceDiver extends JPanel implements ActionListener, KeyListener, M
     }
 
     void drawShip(Graphics2D g, double cx, double cy, double vy) {
-        double tilt = Math.max(-0.5, Math.min(0.8, vy * 0.08));
+        // Tilt based on vertical velocity (nose up when rising, nose down when falling)
+        double tilt = vy * -0.06; // negative: up velocity = upward tilt
+        tilt = Math.max(-0.6, Math.min(0.6, tilt));
+        
         AffineTransform old = g.getTransform();
         g.translate(cx, cy);
         g.rotate(tilt);
 
-        // Glow with ship color
-        for (int i = 3; i >= 1; i--) {
-            Color glowColor = new Color(shipColor.getRed(), shipColor.getGreen(), shipColor.getBlue(), 25 * i);
-            g.setColor(glowColor);
-            int gs = i * 10;
-            g.fillOval(-20 - gs/2, -11 - gs/2, 40 + gs, 22 + gs);
+        // ─── Engine Thruster Glow (back of ship) ───────────────────────────
+        // Multiple concentric glows with warm orange colors
+        int[] glowRadii = {28, 22, 16, 10};
+        int[] glowAlphas = {40, 80, 120, 160};
+        Color[] glowColors = {
+            new Color(255, 100, 20, glowAlphas[0]),
+            new Color(255, 150, 40, glowAlphas[1]),
+            new Color(255, 180, 60, glowAlphas[2]),
+            new Color(255, 200, 100, glowAlphas[3])
+        };
+        
+        for (int i = 0; i < glowRadii.length; i++) {
+            g.setColor(glowColors[i]);
+            g.fillOval(-35 - glowRadii[i]/2, -glowRadii[i]/2, glowRadii[i], glowRadii[i]);
         }
 
-        // Ship body — sleek triangle with random color (1.4x larger)
-        int[] xs = { 25, -20, -20 };
-        int[] ys = {  0, -13,  13 };
+        // ─── Ship Body (main fuselage) ───────────────────────────────────────
+        // Rounded fuselage shape - sleek and aerodynamic
+        Path2D fuselage = new Path2D.Double();
+        fuselage.moveTo(16, -8);      // Front point (nose)
+        fuselage.curveTo(18, -9, 12, -11, 0, -11);   // Top curve
+        fuselage.lineTo(-24, -8);     // Back top
+        fuselage.curveTo(-28, -6, -30, -4, -32, 0);  // Engine back
+        fuselage.lineTo(-24, 8);      // Back bottom
+        fuselage.lineTo(0, 11);       // Bottom curve
+        fuselage.curveTo(12, 11, 18, 9, 16, 8);      // Front bottom
+        fuselage.closePath();
+        
+        // Main body gradient using shipColor
         Color darkColor = new Color(
+            Math.max(0, shipColor.getRed() - 80),
+            Math.max(0, shipColor.getGreen() - 80),
+            Math.max(0, shipColor.getBlue() - 80),
+            220
+        );
+        GradientPaint bodyGrad = new GradientPaint(
+            -20, -10, shipColor,
+            16, 0, new Color(shipColor.getRed(), shipColor.getGreen(), shipColor.getBlue(), 255)
+        );
+        g.setPaint(bodyGrad);
+        g.fill(fuselage);
+
+        // ─── Wing Fins (port and starboard) ──────────────────────────────────
+        // Upper wing
+        Path2D upperWing = new Path2D.Double();
+        upperWing.moveTo(-8, -11);
+        upperWing.lineTo(-18, -18);
+        upperWing.lineTo(-20, -14);
+        upperWing.lineTo(-10, -9);
+        upperWing.closePath();
+        
+        g.setColor(new Color(shipColor.getRed(), shipColor.getGreen(), shipColor.getBlue(), 200));
+        g.fill(upperWing);
+        
+        // Lower wing
+        Path2D lowerWing = new Path2D.Double();
+        lowerWing.moveTo(-8, 11);
+        lowerWing.lineTo(-18, 18);
+        lowerWing.lineTo(-20, 14);
+        lowerWing.lineTo(-10, 9);
+        lowerWing.closePath();
+        
+        g.fill(lowerWing);
+
+        // ─── Cockpit Window (front center) ───────────────────────────────────
+        g.setColor(new Color(200, 255, 255, 200));
+        g.fillOval(6, -6, 10, 12);
+        
+        // Cockpit shine/reflection
+        g.setColor(new Color(255, 255, 255, 150));
+        g.fillOval(7, -5, 4, 4);
+
+        // ─── Engine Exhaust Ports (side vents) ───────────────────────────────
+        // Left exhaust vent
+        g.setColor(new Color(255, 150, 80, 180));
+        g.fillOval(-24, -7, 5, 5);
+        
+        // Right exhaust vent
+        g.fillOval(-24, 2, 5, 5);
+
+        // ─── Hull Details (panel lines) ──────────────────────────────────────
+        g.setColor(new Color(
             Math.max(0, shipColor.getRed() - 100),
             Math.max(0, shipColor.getGreen() - 100),
-            Math.max(0, shipColor.getBlue() - 100)
-        );
-        GradientPaint shipGrad = new GradientPaint(-20, -13, shipColor, 25, 0, darkColor);
-        g.setPaint(shipGrad);
-        g.fillPolygon(xs, ys, 3);
+            Math.max(0, shipColor.getBlue() - 100),
+            100
+        ));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawLine(0, -9, -20, -7);  // Top panel line
+        g.drawLine(0, 9, -20, 7);    // Bottom panel line
 
-        // Cockpit accent
-        g.setColor(new Color(255, 255, 255, 220));
-        g.fillOval(2, -5, 14, 10);
-
-        // Wing highlights
+        // ─── Main Body Outline ───────────────────────────────────────────────
         Color brightColor = new Color(
-            Math.min(255, shipColor.getRed() + 100),
-            Math.min(255, shipColor.getGreen() + 100),
-            Math.min(255, shipColor.getBlue() + 100)
+            Math.min(255, shipColor.getRed() + 50),
+            Math.min(255, shipColor.getGreen() + 50),
+            Math.min(255, shipColor.getBlue() + 50),
+            200
         );
         g.setColor(brightColor);
-        g.setStroke(new BasicStroke(2f));
-        g.drawLine(-20, -13, 11, -3);
-        g.drawLine(-20, 13, 11, 3);
+        g.setStroke(new BasicStroke(2));
+        g.draw(fuselage);
+        
+        // Wing outlines
+        g.draw(upperWing);
+        g.draw(lowerWing);
 
         g.setTransform(old);
+
+        // ─── Thruster Particle Trail ────────────────────────────────────────
+        // Create trailing particles continuously when ship is falling
+        if (vy > 1 && alive) {
+            for (int i = 0; i < 2; i++) {
+                double pvy = rng.nextDouble() * 0.8 + 0.5;
+                double pvx = rng.nextDouble() * 1.2 - 0.6;
+                Color trailColor = rng.nextBoolean() 
+                    ? new Color(255, 150, 40, 180)  // Warm orange
+                    : new Color(255, 180, 80, 160); // Golden orange
+                particles.add(new Particle(
+                    cx - 32, 
+                    cy + (rng.nextDouble() - 0.5) * 8, 
+                    pvx, 
+                    pvy, 
+                    20 + rng.nextInt(12), 
+                    trailColor, 
+                    2.5 + rng.nextDouble() * 3
+                ));
+            }
+        }
     }
 
     void drawHUD(Graphics2D g) {
-        // Score
+        // Score display with glow effect
         g.setFont(fontHUD);
-        g.setColor(new Color(0, 220, 255, 220));
         String scoreStr = String.format("%04d", score);
-        g.drawString(scoreStr, W/2 - 40, 46);
+        
+        // Glow layers for score
+        for (int i = 4; i >= 1; i--) {
+            int glowAlpha = (int)(60 * (1.0 - i / 4.0));
+            g.setColor(new Color(0, 200, 255, glowAlpha));
+            g.setFont(new Font(fontHUD.getName(), Font.BOLD, fontHUD.getSize() + i));
+            FontMetrics fm = g.getFontMetrics();
+            int x = W/2 - fm.stringWidth(scoreStr) / 2;
+            g.drawString(scoreStr, x, 50);
+        }
+        
+        // Main score text - bright cyan
+        g.setFont(fontHUD);
+        g.setColor(new Color(0, 255, 200, 255));
+        FontMetrics fm = g.getFontMetrics();
+        int x = W/2 - fm.stringWidth(scoreStr) / 2;
+        g.drawString(scoreStr, x, 50);
 
-        // Best
+        // TIER label - electric orange with subtle glow
         g.setFont(fontSmall);
-        g.setColor(new Color(150, 100, 255, 180));
-        g.drawString("BEST " + bestScore, W - 120, 30);
-
-        // Speed tier
+        g.setColor(new Color(255, 120, 20, 200));
         int tier = score / 5 + 1;
-        g.setColor(new Color(255, 180, 60, 160));
-        g.drawString("TIER " + tier, 30, 30);
+        String tierStr = "TIER " + tier;
+        
+        // Tier glow
+        g.setColor(new Color(255, 150, 50, 80));
+        g.drawString(tierStr, 28, 34);
+        
+        g.setColor(new Color(255, 180, 60, 240));
+        g.drawString(tierStr, 30, 32);
 
+        // BEST label - violet with subtle glow
+        String bestStr = "BEST " + bestScore;
+        
+        // Best glow
+        g.setColor(new Color(150, 100, 200, 80));
+        fm = g.getFontMetrics();
+        g.drawString(bestStr, W - 125, 34);
+        
+        g.setColor(new Color(180, 120, 255, 230));
+        g.drawString(bestStr, W - 122, 32);
+
+        // Start screen
         if (!started && alive) {
             // Draw orbiting planets
             drawOrbitingPlanets(g);
 
+            // Title
             drawCenteredText(g, "SPACE DIVER", fontBig, new Color(0, 220, 255), H/2 - 100);
-            drawCenteredText(g, "DODGE THE PIPES", fontSmall, new Color(120, 100, 200), H/2 - 20);
+            drawCenteredText(g, "DODGE THE BARRIERS", fontSmall, new Color(100, 180, 255), H/2 - 20);
 
-            // Animated click indicator (pulsing emoji-like circle)
+            // Animated click indicator
             int clickAlpha = Math.max(0, Math.min(255, 100 + (int)(150 * Math.sin(clickAnimationPhase * Math.PI / 30))));
-            g.setColor(new Color(255, 180, 60, clickAlpha));
+            g.setColor(new Color(255, 150, 60, clickAlpha));
             g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
-            FontMetrics fm = g.getFontMetrics();
+            FontMetrics fmEmoji = g.getFontMetrics();
             String emoji = "👆";
-            int emojiX = W/2 - fm.stringWidth(emoji) / 2;
+            int emojiX = W/2 - fmEmoji.stringWidth(emoji) / 2;
             int emojiY = H/2 + 40;
             g.drawString(emoji, emojiX, emojiY);
 
-            drawCenteredText(g, "PRESS SPACE OR CLICK TO START", fontSmall, new Color(180, 180, 255), H/2 + 95);
+            drawCenteredText(g, "PRESS SPACE OR CLICK TO START", fontSmall, new Color(150, 200, 255), H/2 + 95);
         }
 
+        // Game over screen
         if (!alive) {
             drawCenteredText(g, "SHIP DESTROYED", fontBig, new Color(255, 80, 60), H/2 - 60);
             drawCenteredText(g, "SCORE  " + score, fontHUD, new Color(0, 220, 255), H/2);
-            drawCenteredText(g, "BEST   " + bestScore, fontHUD, new Color(180, 100, 255), H/2 + 44);
-            drawCenteredText(g, "PRESS R TO RETRY", fontSmall, new Color(180, 180, 255), H/2 + 90);
+            drawCenteredText(g, "BEST   " + bestScore, fontHUD, new Color(180, 120, 255), H/2 + 44);
+            drawCenteredText(g, "PRESS R TO RETRY", fontSmall, new Color(150, 200, 255), H/2 + 90);
         }
     }
 
